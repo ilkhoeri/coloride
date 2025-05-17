@@ -7,20 +7,28 @@ output_path = Path(__file__).parent / "colors.css"
 
 # Fungsi utama untuk generate CSS custom properties
 def generate_css_vars(tokens: dict) -> str:
-    lines = [":root,", ":host {"]
+    solid_lines = [":root,", ":host {"]
+    overlay_lines = [":root,", ":host {"]
 
     def walk(prefix: str, value):
         if isinstance(value, str):
-            lines.append(f"  --{prefix}: {value};")
+            line = f"  --{prefix}: {value};"
+            if "-overlay" in prefix:
+                overlay_lines.append(line)
+            else:
+                solid_lines.append(line)
         elif isinstance(value, dict):
             for key, val in value.items():
-                walk(f"{prefix}-{key}", val)
+                new_prefix = f"{prefix}-{key}"
+                walk(new_prefix, val)
 
     for name, token in tokens.items():
         walk(name, token)
 
-    lines.append("}")
-    return "\n".join(lines)
+    solid_lines.append("}")
+    overlay_lines.append("}")
+
+    return "\n".join(solid_lines) + "\n\n" + "\n".join(overlay_lines)
 
 # Load JSON dan generate output
 with open(input_path, "r", encoding="utf-8") as f:

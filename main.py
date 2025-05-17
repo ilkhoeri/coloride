@@ -22,56 +22,66 @@ def generate_overlay_alpha(scale, alphas=None, base="#000"): # or base="#fff"
         overlay_scale[f"{key}"] = hex_rgba
     return overlay_scale
 
-def generate_from_hue(name, hue, chroma=0.15, l_start=0.95, l_end=0.2, steps=9):
+def generate_scale_from_base_hex(name, hex_value, steps=11):
+    anchor = Color(hex_value).convert('oklch').fit()
+    l, c, h = anchor.coords()
+
     scale = OrderedDict()
-    for i, step in enumerate(range(100, 1000, 100)):
-        t = i / (steps - 1)
-        l = l_start + (l_end - l_start) * t
-        color = Color('oklch', [l, chroma, hue]).convert('srgb')
-        color.fit(method='clip')
-        scale[str(step)] = color.to_string(hex=True)
+    labels = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '1000']
+
+    # range lightness: misalnya dari 0.98 ke 0.2, dengan 500 sebagai titik tengah
+    lightness_range = [l + (0.98 - l) * (1 - i / 5) if i < 5 else l - (l - 0.2) * ((i - 5) / 5) for i in range(11)]
+
+    for i, label in enumerate(labels):
+        l_new = min(max(lightness_range[i], 0), 1)  # clamp
+        color = Color('oklch', [l_new, c, h]).convert('srgb').fit()
+        scale[label] = color.to_string(hex=True)
+
     return name, scale
+
+colors = {
+    "charcoal": "#264653",
+    "persian-green": "#2a9d8f",
+    "saffron": "#e9c46a",
+    "sandy-brown": "#f4a261",
+    "burnt-sienna": "#e76f51",
+    "rich-black": "#001219ff",
+    "midnight-green": "#005f73ff",
+    "dark-cyan": "#0a9396ff",
+    "tiffany-blue": "#94d2bdff",
+    "vanilla": "#e9d8a6ff",
+    "gamboge": "#ee9b00ff",
+    "alloy-orange": "#ca6702ff",
+    "rust": "#bb3e03ff",
+    "rufous": "#ae2012ff",
+    "auburn": "#9b2226ff",
+    "rose": "#f72585ff",
+    "fandango": "#b5179eff",
+    "grape": "#7209b7ff",
+    "chrysler-blue": "#560badff",
+    "dark-blue": "#480ca8ff",
+    "zaffre": "#3a0ca3ff",
+    "palatinate-blue": "#3f37c9ff",
+    "neon-blue": "#4361eeff",
+    "chefchaouen-blue": "#4895efff",
+    "vivid-sky-blue": "#4cc9f0ff",
+}
 
 palette = OrderedDict()
 
-# (dalam derajat 0-360)
-colors = {
-    "ameth": 270,
-    "azure": 200,
-    "coral": 5,
-    "cyan": 190,
-    "fuchsia": 320,
-    "gold": 40,
-    "gray": 0,
-    "java": 150,
-    "lime": 90,
-    "orange": 25,
-    "pink": 340,
-    "punch": 15,
-    "shaft": 280,
-    "shark": 230,
-    "silver": 30,
-    "teal": 180,
-    "violet": 280,
-    "woodsmoke": 250,
-}
 
-for name, hue in colors.items():
-    _, scale = generate_from_hue(name, hue)
-    alpha = generate_overlay_alpha(scale) # default blend to black
-    # palette[name] = scale
-    # palette[f"{name}A"] = alpha
+for name, props in colors.items():
+    name, scale = generate_scale_from_base_hex(name, props)
+    alpha = generate_overlay_alpha(scale)
     scale["overlay"] = alpha
     palette[name] = scale
 
-palette["pure"] = OrderedDict({
-    "white": "#ffffff",
-    "black": "#000000"
-})
+# for name, hex_color in colors.items():
+#     name, scale = generate_scale_from_base_hex(name, hex_color)
+#     palette[name] = scale
 
 with open("colors.json", "w") as f:
     json.dump(palette, f, indent=2)
 
-print("✅ Palet dari hue berhasil dibuat dan disimpan ke 'colors.json'")
-
-# Run python main.py && python generate-css.py
+print("✅ Skala warna berhasil dibuat dari warna dasar.")
+# python main.py && python generate-css.py
